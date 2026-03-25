@@ -1,0 +1,110 @@
+{
+  "skill_name": "review-pr",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I'm about to open a PR for a new user authentication feature. Can you review my code before I push it? Here's the relevant file:\n\n```typescript\n// src/auth/loginService.ts\nimport jwt from 'jsonwebtoken';\n\nconst SECRET = 'mysecretkey123';\n\nexport async function loginUser(email: string, password: string) {\n  const user = await db.query(`SELECT * FROM users WHERE email = '${email}' AND password = '${password}'`);\n  if (!user) {\n    return null;\n  }\n  console.log('User logged in:', user);\n  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, SECRET);\n  return token;\n}\n\nexport async function getAllUsers() {\n  const users = await db.query('SELECT * FROM users');\n  return users;\n}\n```",
+      "expected_output": "Review identifying: SQL injection in raw query, hardcoded JWT secret, console.log leaking user data, no token expiry, passwords stored/compared in plaintext, no pagination on getAllUsers. Each issue explained clearly with before/after examples. Final summary with merge signal ⚠️.",
+      "assertions": [
+        {
+          "id": "detects_sql_injection",
+          "description": "Detects SQL injection vulnerability in raw query string",
+          "type": "llm_judge",
+          "criteria": "The review explicitly identifies the SQL injection risk in the raw template literal query and suggests using parameterized queries or an ORM"
+        },
+        {
+          "id": "detects_hardcoded_secret",
+          "description": "Flags hardcoded JWT secret",
+          "type": "llm_judge",
+          "criteria": "The review flags the hardcoded SECRET constant and recommends using environment variables (process.env)"
+        },
+        {
+          "id": "detects_console_log_leak",
+          "description": "Flags console.log leaking sensitive user data",
+          "type": "llm_judge",
+          "criteria": "The review identifies that console.log('User logged in:', user) leaks sensitive user data and recommends removing it or logging only non-sensitive identifiers"
+        },
+        {
+          "id": "warns_merge_blocked",
+          "description": "Emits ⚠️ Fix before opening merge signal",
+          "type": "llm_judge",
+          "criteria": "The final summary includes a clear signal that the PR should NOT be opened yet (⚠️ or equivalent warning)"
+        },
+        {
+          "id": "junior_explanation_present",
+          "description": "Includes plain-language explanation for junior devs",
+          "type": "llm_judge",
+          "criteria": "At least one finding includes a plain-language explanation of why the issue matters in practice, suitable for a developer with 6 months of experience"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "Hey, before I submit this PR can you take a look? It's a React component I built for our dashboard. I'm not sure if it's optimal.\n\n```tsx\n// src/components/UserList.tsx\nimport React from 'react';\n\ntype User = { id: number; name: string; email: string };\n\nconst UserList = ({ users, onDelete }: { users: User[]; onDelete: (id: number) => void }) => {\n  const handleDelete = (id: number) => {\n    onDelete(id);\n  };\n\n  const sortedUsers = users.sort((a, b) => a.name.localeCompare(b.name));\n\n  return (\n    <div>\n      {sortedUsers.map((user) => (\n        <div key={user.id}>\n          <span>{user.name} - {user.email}</span>\n          <button onClick={() => handleDelete(user.id)}>Delete</button>\n        </div>\n      ))}\n    </div>\n  );\n};\n\nexport default UserList;\n```",
+      "expected_output": "Review identifying: handleDelete is a wrapper that adds no value (unnecessary indirection), array.sort() mutates the original users array (should use [...users].sort()), missing useCallback on handleDelete. Overall code is clean so score should be decent. Merge signal could be ✅ or ⚠️ depending on severity assessment.",
+      "assertions": [
+        {
+          "id": "detects_array_mutation",
+          "description": "Detects that .sort() mutates the original array",
+          "type": "llm_judge",
+          "criteria": "The review identifies that users.sort() mutates the original array prop and recommends spreading first ([...users].sort()) or using toSorted()"
+        },
+        {
+          "id": "detects_useless_wrapper",
+          "description": "Flags handleDelete as an unnecessary wrapper",
+          "type": "llm_judge",
+          "criteria": "The review points out that handleDelete is a thin wrapper around onDelete that adds no logic, and suggests either removing it or noting it would make sense with useCallback"
+        },
+        {
+          "id": "provides_code_example",
+          "description": "Provides a before/after code example",
+          "type": "llm_judge",
+          "criteria": "The review includes at least one before/after code example illustrating how to fix a finding"
+        },
+        {
+          "id": "scores_dimensions",
+          "description": "Scores all three dimensions (best practices, performance, security)",
+          "type": "llm_judge",
+          "criteria": "The review includes numeric scores (X/10) for all three dimensions: best practices/readability, performance/optimization, and security/bugs"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review my code please, I'm opening a PR today.\n\n```typescript\n// src/api/productService.ts\nimport axios from 'axios';\n\nexport async function fetchProducts(category: string) {\n  const res = await axios.get(`https://api.example.com/products?category=${category}`);\n  return res.data;\n}\n\nexport async function fetchProductDetails(id: string) {\n  const res = await axios.get(`https://api.example.com/products/${id}`);\n  return res.data;\n}\n\nexport async function createProduct(data: any) {\n  const res = await axios.post('https://api.example.com/products', data);\n  return res.data;\n}\n\nexport async function updateProduct(id: string, data: any) {\n  const res = await axios.put(`https://api.example.com/products/${id}`, data, {\n    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }\n  });\n  return res.data;\n}\n```",
+      "expected_output": "Review identifying: use of 'any' type for data params (TypeScript best practice), no error handling on any API call, localStorage in a service layer (should be abstracted), hardcoded base URL (should use env var or config), unvalidated 'category' and 'id' params going directly into URLs. Merge signal ⚠️.",
+      "assertions": [
+        {
+          "id": "detects_any_type",
+          "description": "Flags use of 'any' type",
+          "type": "llm_judge",
+          "criteria": "The review flags the use of 'any' as the type for the data parameter and recommends defining proper TypeScript interfaces or types"
+        },
+        {
+          "id": "detects_no_error_handling",
+          "description": "Identifies missing error handling",
+          "type": "llm_judge",
+          "criteria": "The review notes the absence of try/catch or error handling on the async API calls"
+        },
+        {
+          "id": "detects_localstorage_in_service",
+          "description": "Flags localStorage access inside a service layer",
+          "type": "llm_judge",
+          "criteria": "The review identifies that accessing localStorage directly in a service layer is a bad practice and recommends abstracting token access or passing it as a parameter"
+        },
+        {
+          "id": "overall_score_present",
+          "description": "Includes an overall PR score",
+          "type": "llm_judge",
+          "criteria": "The final summary includes an overall PR score or rating"
+        },
+        {
+          "id": "top3_issues_listed",
+          "description": "Lists top 3 critical issues",
+          "type": "llm_judge",
+          "criteria": "The final summary includes a prioritized list of at least 3 critical issues to fix before merging"
+        }
+      ]
+    }
+  ]
+}

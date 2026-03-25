@@ -1,0 +1,43 @@
+{
+  "skill_name": "pr-summary",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Summarize PR #42 for me. I'm on a GitHub repo.",
+      "expected_output": "A markdown file named pr-42-summary.md saved in the current directory, with sections: What changed, Motivation and context, Impact and risks, Files changed. Should detect GitHub platform, fetch PR data via gh CLI, and produce a clear human-readable summary.",
+      "files": [],
+      "expectations": [
+        "Output file is named pr-42-summary.md",
+        "File contains a '## What changed' section with substantive content",
+        "File contains a '## Motivation and context' section",
+        "File contains a '## Impact and risks' section",
+        "File contains a '## Files changed' table",
+        "File header includes PR number, author, and branch info"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Preciso de um resumo do PR atual. Estou no branch feature/add-login e o repositório é do GitLab.",
+      "expected_output": "A skill should detect the current branch, find the open MR on GitLab using glab CLI, and produce pr-<NUMBER>-summary.md with all required sections in a clear format.",
+      "files": [],
+      "expectations": [
+        "Skill attempts to detect the open MR for the current branch",
+        "Output file follows the pr-<number>-summary.md naming convention",
+        "File contains all four required sections",
+        "Platform is identified as GitLab in the file header"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate a PR summary for https://github.com/myorg/myrepo/pull/87",
+      "expected_output": "Skill extracts PR number 87 from the URL, fetches data from GitHub, and saves pr-87-summary.md with complete structured content.",
+      "files": [],
+      "expectations": [
+        "PR number 87 is correctly extracted from the URL",
+        "Output file is named pr-87-summary.md",
+        "File contains substantive content in 'What changed' — not just file names",
+        "File contains a files changed table with at least one row"
+      ]
+    }
+  ]
+}
