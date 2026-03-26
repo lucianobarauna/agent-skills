@@ -125,6 +125,7 @@ storybook-static
 # Temporary folders
 tmp/
 temp/
+evals/
 
 # Logs
 logs
@@ -266,3 +267,4 @@ cython_debug/
 *.backup
 *.tmp
 *.temp
+
