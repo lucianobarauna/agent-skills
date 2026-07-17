@@ -9,7 +9,9 @@ Generate a clear, structured Pull Request or Merge Request description from **lo
 3. **Finds the base branch** automatically (`main`, `master`, or `develop`).
 4. **Collects commits** on the current branch not yet merged into the base, filtered by date range. Merge commits are excluded.
 5. **Reads the diff** and understands the change — not just echoing commit messages.
-6. **Saves a markdown file** in the current directory, ready to paste as a PR/MR description.
+6. **Asks for a title** (type, optional epic, optional task links) and generates a suggested
+   PR/MR title plus an optional `## Tasks` section.
+7. **Saves a markdown file** in the current directory, ready to paste as a PR/MR description.
 
 ## Output format
 
@@ -17,7 +19,7 @@ Generate a clear, structured Pull Request or Merge Request description from **lo
 pr-<branch-name>-summary.md
 ```
 
-Covers: what changed, motivation & context, impact & risks, and a file-by-file breakdown with line counts.
+Covers: suggested title, what changed, motivation & context, tasks (if provided), impact & risks, and a file-by-file breakdown with line counts.
 
 ## Triggers
 

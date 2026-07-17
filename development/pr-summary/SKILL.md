@@ -117,6 +117,31 @@ Commit messages signal the author's intent; the diff reveals the reality. Use bo
 
 ---
 
+## Step 5.5 — Generate a title based on the MR description
+
+Before saving, generate a suggested MR/PR title based on the "What changed" summary (Step 5).
+
+1. **Ask the user, in a single interaction**, for:
+   - `<type_task>` — free text (e.g., feat, fix, chore, refactor).
+   - `<epic>` — optional. A code identifying the epic this work belongs to (e.g., `EPIC-10`).
+   - `<tasks>` — optional. One or more links or codes for the individual tasks/tickets
+     covered by this PR/MR.
+
+2. **Write `<title_description>`**: a concise summary of the "What changed" section —
+   easy to read, contextualized with the description, following good PR/MR title
+   practices (imperative mood, no trailing period, concise, ideally ≤72 characters).
+
+3. **Build the title:**
+   - With epic: `<type_task>(<epic>): <title_description>`
+   - Without epic: `<type_task>: <title_description>`
+   - Tasks are never used in the title — only the epic. If there's no epic, the title
+     has no code, even if tasks were provided.
+
+4. **Process the tasks** (if any provided): for each task, determine if it's a URL or
+   a plain code. Keep both forms — they're needed for the `## Tasks` section in Step 6.
+
+---
+
 ## Step 6 — Save the output
 
 Determine the filename:
@@ -128,6 +153,7 @@ Save in the current working directory using this exact template:
 ```markdown
 # PR: <Title — infer from commits and branch name>
 
+**Suggested title:** <type_task>(<epic>): <title_description>
 **Platform:** <GitHub | GitLab | Azure DevOps | Bitbucket>
 **Branch:** `<current-branch>` → `<base-branch>`
 **Commits:** <N commits in range>
@@ -145,6 +171,14 @@ Focus on what the code does differently now. Avoid just listing commit messages 
 
 <Why was this change made? What problem does it solve or what feature does it add?
 Draw from commit messages and patterns in the diff.>
+
+## Tasks
+
+<Only include this section if the user provided one or more tasks in Step 5.5. Omit
+the entire section — heading included — if none were provided.
+- If the task is a URL, format as a link using the extracted code as text:
+  `- [PROJ-123](https://jira.example.com/browse/PROJ-123)`
+- If the task is a plain code (no URL), list as plain text: `- PROJ-123`>
 
 ## Impact and risks
 
@@ -174,3 +208,5 @@ Keep each section concise. "Impact and risks" can say "No breaking changes ident
 - **Very large diff (>500 files or >5000 lines)**: Focus "What changed" on the most impactful files; note the total size.
 - **No remote configured**: Skip platform detection, use GitHub format, note it in the output.
 - **Many commits over multiple days**: Group the summary by logical area (feature, bugfix, refactor) rather than listing every commit individually.
+- **No epic and no tasks provided**: Title has no code — just `<type_task>: <title_description>`. Omit the `## Tasks` section entirely.
+- **Tasks provided but no epic**: Title still has no code (tasks never substitute for the epic in the title). The `## Tasks` section is still included with all tasks listed.
