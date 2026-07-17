@@ -31,4 +31,3 @@ skills/
 | Skill                             | Description                                                                     |
 | --------------------------------- | ------------------------------------------------------------------------------- |
 | [pr-summary](./skills/pr-summary) | Generate a structured PR/MR description from local git commits — no API needed. |
-| [review-pr](./skills/review-pr)   | Pre-PR code review for JS/TS: best practices, performance, and security.        |
