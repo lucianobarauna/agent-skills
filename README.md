@@ -15,7 +15,7 @@ npx skills install <skill-name>
 Each skill lives in its own folder under `development/`:
 
 ```
-development/
+skills/
 └── <skill-name>/
     ├── SKILL.md    # skill definition loaded by Claude Code
     └── README.md   # detailed documentation
@@ -28,7 +28,7 @@ development/
 
 ## Skills
 
-| Skill | Description |
-|-------|-------------|
-| [pr-summary](./development/pr-summary) | Generate a structured PR/MR description from local git commits — no API needed. |
-| [review-pr](./development/review-pr) | Pre-PR code review for JS/TS: best practices, performance, and security. |
+| Skill                             | Description                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| [pr-summary](./skills/pr-summary) | Generate a structured PR/MR description from local git commits — no API needed. |
+| [review-pr](./skills/review-pr)   | Pre-PR code review for JS/TS: best practices, performance, and security.        |
