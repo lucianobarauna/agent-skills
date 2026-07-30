@@ -7,7 +7,7 @@ A personal collection of [Claude Code](https://docs.anthropic.com/en/docs/claude
 Skills are installed via [`npx skills`](https://skills.sh):
 
 ```bash
-npx skills install <skill-name>
+npx skills add lucianobarauna/repo>
 ```
 
 ## Structure
