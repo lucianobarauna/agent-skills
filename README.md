@@ -38,7 +38,7 @@ skills/
 ### Create a PR summary from local commits
 
 ```bash
-npx skills install pr-summary
+npx skills add lucianobarauna/pr-summary
 ```
 
 Then in Claude Code, ask:
