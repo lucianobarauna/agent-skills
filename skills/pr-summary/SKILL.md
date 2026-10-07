@@ -1,162 +1,86 @@
 ---
 name: pr-summary
 description: >
-  Use this skill whenever the user wants to document, summarize, or write up a Pull Request
-  or Merge Request based on their local git commits — no remote API access needed.
-  Triggers for: "summarize my commits since Monday", "generate a PR description for today's
-  work", "create an MR description from commits since 2026-03-20", "gerar resumo do PR",
-  "resumir PR", "o que mudou nesse PR", "descrever o MR", as well as when the user gives a
-  PR/MR number or URL as a reference point. Detects the platform (GitHub, GitLab, Azure
-  DevOps, Bitbucket) from the remote URL to format the output correctly — but makes no API
-  calls. Produces a structured markdown file covering what changed, the motivation, and the
-  risks, ready to paste as a PR/MR description.
-  Do NOT trigger for code reviews, merge conflict help, commit messages, changelogs, or
-  release notes — only when the user explicitly wants a saved PR/MR summary or description.
+  Generates a Pull Request or Merge Request description from local git commits and saves it
+  as a markdown file ready to paste on GitHub, GitLab, Azure DevOps or Bitbucket. Makes no
+  API calls, so it works with private repos. Use when the user wants a PR/MR description
+  written up: "generate a PR description", "create an MR description for this branch",
+  "summarize my commits since Monday", "gerar resumo do PR", "resumir PR", "descrever o MR",
+  "escreve a descrição do PR", or when they give a PR/MR number or URL.
+  Covers what changed, why, the risks and a suggested title.
+  Do NOT use for code reviews, merge conflict help, commit messages, changelogs, release
+  notes, or quick questions about what a PR changes that only need an answer in chat.
 ---
 
-# PR Summary Skill
+# PR Summary
 
-Generate a clear, structured markdown summary of a Pull Request or Merge Request from **local git history** and save it to disk. No remote API authentication required — works with private repos. The output is ready to paste as a PR/MR description on GitHub, GitLab, Azure DevOps, or Bitbucket.
+Builds a PR/MR description from **local git history** and saves it to disk. The description must cover the user's own commits on this branch and nothing else. `scripts/collect.sh` does the git work so that code merged in from the base branch and other people's commits stay out, and every number comes from git rather than from mental arithmetic.
 
----
+Copy this checklist and tick it off:
 
-## Step 1 — Detect the platform
-
-Parse the remote URL to identify the platform. This is for formatting only — no API calls are made.
-
-```bash
-git remote get-url origin
+```text
+PR summary progress:
+- [ ] 1 Scope chosen from the request
+- [ ] 2 collect.sh run, NOT INCLUDED relayed to the user
+- [ ] 3 Change understood from the PATCH
+- [ ] 4 Title inputs asked
+- [ ] 5 File written
+- [ ] 6 File checked against TOTAL
 ```
 
-| Remote URL contains              | Platform      |
-|----------------------------------|---------------|
-| `github.com`                     | GitHub        |
-| `gitlab.com` or `gitlab.`        | GitLab        |
-| `dev.azure.com` / `visualstudio` | Azure DevOps  |
-| `bitbucket.org`                  | Bitbucket     |
+## Step 1 — Choose the scope
 
-If no remote is configured or the platform is unrecognized, default to GitHub format (widely compatible) and note it in the output.
+From the request, decide two things:
 
----
+- **Period.** By default none: a PR description covers everything the branch will merge. Only when the user names one ("since Monday", "today", "from March 20 to 25"), convert it to absolute dates from today's date.
+- **Authors.** By default only the user's commits. Everyone's only when the user asks for it.
 
-## Step 2 — Determine the date range
+## Step 2 — Run the collector
 
-Parse the user's request for a date range:
-
-- **Start date given** (e.g., "since Monday", "since 2026-03-20", "from last week"): use that as the start date. Translate relative expressions to absolute dates using today's date.
-- **No date given**: default to today only (start = beginning of today).
-- **End date given**: use it. Otherwise, end = now.
-
----
-
-## Step 3 — Find the base branch
-
-Identify which branch this work will be merged into:
+Run it from the repository, do not read it (`${CLAUDE_SKILL_DIR}` is this skill's folder; outside Claude Code, use the folder this SKILL.md was read from):
 
 ```bash
-# Try the default remote branch
-git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||'
+bash ${CLAUDE_SKILL_DIR}/scripts/collect.sh [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--all-authors] [-- <paths>]
 ```
 
-If that fails, check for `main`, `master`, or `develop` in order, **skipping the current branch**:
+It finds the base branch (the remote ref, since a stale local `main` makes merged commits look new), filters by the user's git email or name, leaves merge commits out, and prints `SCOPE`, `COMMITS`, `NOT INCLUDED`, `FILES` with a `TOTAL` line, and `PATCH`.
 
-```bash
-git branch -r | grep -E 'origin/(main|master|develop)' | head -3
-```
+- **Output starts with `STOP:`** (exit 2): tell the user the reason it gives and stop. There is no PR to describe from here.
+- **`COMMITS` is `none`** (exit 3): show the recent commits it lists, ask the user to adjust the period or author, and return to Step 1.
+- **`NOT INCLUDED` has lines:** tell the user in one line, by name (e.g. "Ignored 1 commit by Ana Souza; 1 of your commits is outside the period"). The PR page will show those commits, so a silent filter would leave the reviewer looking at code the description never mentions.
+- **`PATCH` says `SKIPPED`:** the change is too large to read whole. Re-run with `-- <paths>` for the most impactful files from `FILES`, and say in the summary that it covers a large change.
 
-Fall back to `main` if nothing is found.
+Done when you have the full output, including the PATCH.
 
----
+## Step 3 — Understand the change
 
-## Step 4 — Collect commits and diff
+Read the whole `PATCH` before writing anything. Commit messages give the intent; the patch shows what really changed. Use both, and state no cause the patch does not show. Point out what a reviewer must not miss: dependency, schema, config or environment variable changes, removed behaviour, and code the selected commits use from commits left out (another author, outside the period), since the PR merges that code too. When there are many commits, group them by area instead of listing each one.
 
-Get the commits on the **current branch** that are not yet in the base branch, filtered by the date range. Exclude merge commits — they add noise without substance.
+Done when you can say in plain words what the code does differently now.
 
-```bash
-# Current branch
-CURRENT=$(git branch --show-current)
+## Step 4 — Ask for the title inputs
 
-# Commits on this branch not in base, filtered by date (no merge commits)
-git log <base_branch>..HEAD \
-  --since="<start_date>" --until="<end_date>" \
-  --no-merges \
-  --format="%h %s (%an, %ad)" --date=short
-```
+In a single message, ask for:
 
-If no commits are returned, tell the user and show the 5 most recent non-merge commits on the branch so they can adjust the range:
+- `<type>` — e.g. feat, fix, chore, refactor
+- `<epic>` — optional epic code, e.g. `EPIC-10`
+- `<tasks>` — optional links or codes of the tasks/tickets this PR covers
 
-```bash
-git log <base_branch>..HEAD --no-merges --oneline -5
-```
+The title is `<type>(<epic>): <description>`, or `<type>: <description>` without an epic. Tasks never go in the title, even without an epic: they belong to the Tasks section. `<description>` sums up "What changed" in the imperative, starting lowercase, without a trailing period, ideally in 72 characters or fewer.
 
-Once you have commits, find the oldest one in the range and generate the diff for **only those commits** — not the entire branch history:
+## Step 5 — Write the file
 
-```bash
-# Find the oldest commit in the filtered range
-OLDEST=$(git log <base_branch>..HEAD --since="<start_date>" --until="<end_date>" \
-  --no-merges --format="%H" | tail -1)
+**Name:** `pr-<NUMBER>-summary.md` when the user gave a PR/MR number or URL (take the number from the path, e.g. `/pull/42`, `/merge_requests/42`, `/pullrequest/42`); otherwise `pr-<branch>-summary.md`, with `/` and spaces replaced by `-`. Save it in the current working directory. If the file already exists, ask before overwriting it.
 
-# Diff from just before that commit to HEAD (covers exactly the work in scope)
-git diff ${OLDEST}^..HEAD --stat
-git diff ${OLDEST}^..HEAD
-```
+**Language:** English, unless the user asks for another language. Then translate all the text — headings, bold labels, table header and footer — so the file does not mix languages; keep code, paths and the title prefix (`feat(EPIC-10):`) as they are, but translate the title's description.
 
-This ensures the diff matches the commits being described — especially important when the date range is shorter than the full branch history.
-
----
-
-## Step 5 — Analyze and write the summary
-
-Read the commits and diff carefully. Your job is to *understand* the change, not just echo commit messages or list files. Think about:
-
-- **What** changed, in plain language
-- **Why** — infer from commit messages and code patterns
-- **What might need attention** — dependency changes, schema changes, config changes, removed functionality
-
-Commit messages signal the author's intent; the diff reveals the reality. Use both.
-
----
-
-## Step 5.5 — Generate a title based on the MR description
-
-Before saving, generate a suggested MR/PR title based on the "What changed" summary (Step 5).
-
-1. **Ask the user, in a single interaction**, for:
-   - `<type_task>` — free text (e.g., feat, fix, chore, refactor).
-   - `<epic>` — optional. A code identifying the epic this work belongs to (e.g., `EPIC-10`).
-   - `<tasks>` — optional. One or more links or codes for the individual tasks/tickets
-     covered by this PR/MR.
-
-2. **Write `<title_description>`**: a concise summary of the "What changed" section —
-   easy to read, contextualized with the description, following good PR/MR title
-   practices (imperative mood, no trailing period, concise, ideally ≤72 characters).
-
-3. **Build the title:**
-   - With epic: `<type_task>(<epic>): <title_description>`
-   - Without epic: `<type_task>: <title_description>`
-   - Tasks are never used in the title — only the epic. If there's no epic, the title
-     has no code, even if tasks were provided.
-
-4. **Process the tasks** (if any provided): for each task, determine if it's a URL or
-   a plain code. Keep both forms — they're needed for the `## Tasks` section in Step 6.
-
----
-
-## Step 6 — Save the output
-
-Determine the filename:
-- If the user gave a PR/MR number: `pr-<NUMBER>-summary.md`
-- Otherwise: use the current branch name, sanitized — replace `/` and spaces with `-`: `pr-<branch-name>-summary.md`
-
-Save in the current working directory using this exact template:
+Use this exact structure:
 
 ```markdown
-# PR: <Title — infer from commits and branch name>
+# <title from Step 4>
 
-**Suggested title:** <type_task>(<epic>): <title_description>
-**Platform:** <GitHub | GitLab | Azure DevOps | Bitbucket>
-**Branch:** `<current-branch>` → `<base-branch>`
-**Commits:** <N commits in range>
+**Branch:** `<current-branch>` → `<base, as SCOPE shows it>`
+**Commits:** <N> by <git user.name>[; not included: <M> by <other names>]
 **Period:** <start_date> – <end_date>
 **Files changed:** <N> (+<additions> / -<deletions>)
 
@@ -164,49 +88,38 @@ Save in the current working directory using this exact template:
 
 ## What changed
 
-<2–4 sentences describing the substance of the change in plain language.
-Focus on what the code does differently now. Avoid just listing commit messages or file names.>
+<2–4 sentences on what the code does differently now. Not a list of commit messages or file names.>
 
 ## Motivation and context
 
-<Why was this change made? What problem does it solve or what feature does it add?
-Draw from commit messages and patterns in the diff.>
+<Why the change was made: the problem it solves or the feature it adds.>
 
 ## Tasks
 
-<Only include this section if the user provided one or more tasks in Step 5.5. Omit
-the entire section — heading included — if none were provided.
-- If the task is a URL, format as a link using the extracted code as text:
-  `- [PROJ-123](https://jira.example.com/browse/PROJ-123)`
-- If the task is a plain code (no URL), list as plain text: `- PROJ-123`>
+<only when the user gave tasks; format below>
 
 ## Impact and risks
 
-<What could this affect? Are there breaking changes, migration steps, environment
-variable changes, schema changes, or areas that need attention?>
+<Breaking changes, migrations, env vars, schema or config changes, areas that need attention.
+"No breaking changes identified." when that is genuinely the case.>
 
 ## Files changed
 
 | File | Changes |
 |------|---------|
-| `path/to/file.ts` | +42 / -10 — brief note on what changed here |
-| `path/to/other.ts` | +5 / -3 — brief note |
+| `path/to/file.ts` | +42 / -10 — what changed here |
 
 ---
 
 *Generated by pr-summary skill on <date>.*
 ```
 
-Keep each section concise. "Impact and risks" can say "No breaking changes identified." if that's genuinely the case — don't pad it. The goal is a summary a reviewer can read in 60 seconds.
+- **Period:** the requested range, ending today when the user gave no end. Omit the line when there are no date flags.
+- **Tasks:** a URL becomes a link with the task code as text (`- [PROJ-123](https://jira.example.com/browse/PROJ-123)`); a plain code stays plain text (`- PROJ-456`). Omit the section, heading included, when the user gave no tasks.
+- **Files changed:** copy the numbers from `FILES` and `TOTAL`. They add up the selected commits, so a line changed in two commits counts twice.
 
----
+Keep every section short: a reviewer should get through it in 60 seconds.
 
-## Edge cases
+## Step 6 — Check the file
 
-- **No commits in date range**: Inform the user and show the 5 most recent non-merge commits on the branch as a hint.
-- **Current branch IS the base branch** (e.g., user is on `main`): Warn them — suggest switching to their feature branch or integration branch first.
-- **Very large diff (>500 files or >5000 lines)**: Focus "What changed" on the most impactful files; note the total size.
-- **No remote configured**: Skip platform detection, use GitHub format, note it in the output.
-- **Many commits over multiple days**: Group the summary by logical area (feature, bugfix, refactor) rather than listing every commit individually.
-- **No epic and no tasks provided**: Title has no code — just `<type_task>: <title_description>`. Omit the `## Tasks` section entirely.
-- **Tasks provided but no epic**: Title still has no code (tasks never substitute for the epic in the title). The `## Tasks` section is still included with all tasks listed.
+Compare the saved file with the collector's output: the `**Files changed:**` line must match `TOTAL`, the table must list every file in `FILES` with the same numbers, and `**Commits:**` must match the `COMMITS` count and `NOT INCLUDED`. If anything differs, fix the file and check again.

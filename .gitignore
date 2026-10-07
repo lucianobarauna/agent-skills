@@ -125,7 +125,6 @@ storybook-static
 # Temporary folders
 tmp/
 temp/
-evals/
 
 # Logs
 logs
