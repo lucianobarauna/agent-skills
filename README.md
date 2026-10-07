@@ -7,7 +7,7 @@ A personal collection of [Claude Code](https://docs.anthropic.com/en/docs/claude
 Skills are installed via [`npx skills`](https://skills.sh):
 
 ```bash
-npx skills install <skill-name>
+npx skills add lucianobarauna/agent-skills --skill <skill-name>
 ```
 
 ## Structure
@@ -31,14 +31,14 @@ skills/
 
 | Skill | Description |
 |-------|-------------|
-| [pr-summary](./skills/pr-summary) | Generate a structured PR/MR description from local git commits — no API needed. Detects platform (GitHub, GitLab, Azure DevOps, Bitbucket) from remote URL. |
+| [pr-summary](./skills/pr-summary) | Generate a structured PR/MR description from your own local git commits — no API needed. Ready to paste on GitHub, GitLab, Azure DevOps or Bitbucket. |
 
 ## Quick Start
 
 ### Create a PR summary from local commits
 
 ```bash
-npx skills add lucianobarauna/pr-summary
+npx skills add lucianobarauna/agent-skills --skill pr-summary
 ```
 
 Then in Claude Code, ask:

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a collection of Claude Code skills — reusable prompt-driven agents that extend Claude Code's capabilities. Each skill lives in its own subdirectory under `skills/` and is installed via `npx skills install <skill-name>`.
+This is a collection of Claude Code skills — reusable prompt-driven agents that extend Claude Code's capabilities. Each skill lives in its own subdirectory under `skills/` and is installed via `npx skills add lucianobarauna/agent-skills --skill <skill-name>`.
 
 Skills have no build process, no runtime dependencies, and no package manager. Everything is plain Markdown and JSON, plus small bash scripts (a skill may ship `scripts/` it runs; evals may ship a fixture builder).
 
