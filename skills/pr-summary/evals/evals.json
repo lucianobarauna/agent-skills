@@ -22,7 +22,8 @@
       "expectations": [
         "The title has the form 'fix: <description>', with no scope in parentheses",
         "PROJ-456 does not appear in the title",
-        "The '## Tasks' section lists PROJ-456 as plain text, not as a link"
+        "The '## Tasks' section lists PROJ-456 as plain text, not as a link",
+        "The title description states what the code does (login/logout); it does not invent a motive such as 'security' because the type is fix"
       ]
     },
     {
@@ -57,7 +58,8 @@
         "package-lock.json is listed in Files changed, but its contents are not described",
         "There is no '**Period:**' line, since no date range was given",
         "There is no '**Platform:**' line",
-        "collect.sh is run once instead of hand-written git log commands"
+        "collect.sh is run once instead of hand-written git log commands",
+        "'Impact and risks' says that src/auth.js uses src/session.js from a commit left out of the description, so the PR merges that code too"
       ]
     },
     {
@@ -77,7 +79,8 @@
       "expectations": [
         "The file is named pr-42-summary.md",
         "Section headings are in Portuguese (e.g. 'O que mudou'), not in English",
-        "The title prefix 'feat:' and the file paths are kept as they are"
+        "The title prefix 'feat:' and the file paths are kept as they are",
+        "Bold labels and the Commits line are in Portuguese too (e.g. '2 por Dev Tester'), not 'by'"
       ]
     },
     {
