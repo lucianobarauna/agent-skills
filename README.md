@@ -12,7 +12,7 @@ npx skills install <skill-name>
 
 ## Structure
 
-Each skill lives in its own folder under `development/`:
+Each skill lives in its own folder under `skills/`:
 
 ```
 skills/

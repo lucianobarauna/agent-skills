@@ -1,0 +1,111 @@
+{
+  "skill_name": "pr-summary",
+  "setup": "Run `bash evals/setup-fixture.sh <empty-dir>` and start each eval inside <empty-dir>/work (branch feat/login, base origin/main, git user Dev Tester). The branch holds 2 commits by Dev Tester (10 days ago and today; today's adds a package-lock.json), 1 by Ana Souza (3 days ago) and a merge of main that brings DEPLOY.md by Carlos Main.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Gera um resumo do PR. Quando perguntado, informo type_task=feat, epic=EPIC-10, e uma task com link https://jira.example.com/browse/PROJ-123.",
+      "expected_output": "pr-feat-login-summary.md whose first line is '# feat(EPIC-10): <description>' and whose '## Tasks' section links '[PROJ-123](https://jira.example.com/browse/PROJ-123)'.",
+      "expectations": [
+        "The skill asks for type, epic and tasks in a single message before saving the file",
+        "The file's first line is a heading in the form 'feat(EPIC-10): <description>'",
+        "The description is in the imperative mood, has no trailing period and is at most 72 characters",
+        "The '## Tasks' section sits between 'Motivation and context' and 'Impact and risks'",
+        "The task is a markdown link with the code as text: '[PROJ-123](https://jira.example.com/browse/PROJ-123)'",
+        "The file is written in English, since no other language was requested"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Gera um resumo do PR. Quando perguntado, informo type_task=fix, sem épico, e uma task apenas com o código PROJ-456 (sem link).",
+      "expected_output": "The title is 'fix: <description>' with no code, and '## Tasks' lists '- PROJ-456' as plain text.",
+      "expectations": [
+        "The title has the form 'fix: <description>', with no scope in parentheses",
+        "PROJ-456 does not appear in the title",
+        "The '## Tasks' section lists PROJ-456 as plain text, not as a link"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Gera um resumo do PR. Quando perguntado, informo type_task=chore, e digo que não tenho épico nem tasks.",
+      "expected_output": "The title is 'chore: <description>' and the file has no '## Tasks' heading.",
+      "expectations": [
+        "The title has the form 'chore: <description>'",
+        "The '## Tasks' heading does not appear in the file",
+        "What changed, Motivation and context, Impact and risks and Files changed are all present"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Gera um resumo do PR. Quando perguntado, informo type_task=feat, epic=EPIC-20, e não tenho tasks para passar.",
+      "expected_output": "The title is 'feat(EPIC-20): <description>' and the file has no '## Tasks' section.",
+      "expectations": [
+        "The title has the form 'feat(EPIC-20): <description>'",
+        "The '## Tasks' heading does not appear in the file"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Generate a PR description for this branch. When asked, answer type=feat, no epic, no tasks.",
+      "expected_output": "The summary covers only Dev Tester's two commits (login and logout). It says Ana Souza's commit was left out, and neither the session helper nor DEPLOY.md is described as part of the change.",
+      "expectations": [
+        "The base branch used is origin/main, not the local main",
+        "With no date given, the whole branch is covered: both Dev Tester commits (10 days ago and today) are included",
+        "The user is told that 1 commit by Ana Souza was not included",
+        "src/session.js is not listed in the Files changed table",
+        "DEPLOY.md, which came in from the merge of main, is not mentioned anywhere in the file",
+        "package-lock.json is listed in Files changed, but its contents are not described",
+        "There is no '**Period:**' line, since no date range was given",
+        "There is no '**Platform:**' line",
+        "collect.sh is run once instead of hand-written git log commands"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Summarize my commits from the last 4 days into an MR description. When asked: type=feat, no epic, no tasks.",
+      "expected_output": "Only today's Dev Tester commit (logout + lockfile) is covered; the 10-day-old login commit is out of range.",
+      "expectations": [
+        "The relative period is turned into absolute --since dates",
+        "Only the 'feat: add logout and lockfile' commit is described",
+        "The '**Period:**' line shows the absolute start and end dates"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Gera um resumo do PR 42 em português. Quando perguntado: type=feat, sem épico, sem tasks.",
+      "expected_output": "The file is pr-42-summary.md, written entirely in Portuguese, headings included.",
+      "expectations": [
+        "The file is named pr-42-summary.md",
+        "Section headings are in Portuguese (e.g. 'O que mudou'), not in English",
+        "The title prefix 'feat:' and the file paths are kept as they are"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Before running: git switch main. Then: generate a PR description for my work.",
+      "expected_output": "The skill notices the current branch is the base branch, asks the user to switch to the feature branch, and writes no file.",
+      "expectations": [
+        "The skill warns that the current branch is the base branch",
+        "No pr-*-summary.md file is created"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Escreve uma mensagem de commit para as minhas mudanças.",
+      "expected_output": "The pr-summary skill does not trigger: this is a commit message request.",
+      "expectations": [
+        "The pr-summary skill is not used",
+        "No pr-*-summary.md file is created"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "O que mudou nesse PR? Só me explica rapidinho.",
+      "expected_output": "The pr-summary skill does not trigger: the user wants a short answer in chat, not a saved description.",
+      "expectations": [
+        "The pr-summary skill is not used",
+        "No pr-*-summary.md file is created"
+      ]
+    }
+  ]
+}

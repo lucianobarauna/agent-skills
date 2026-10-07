@@ -1,33 +1,46 @@
 # pr-summary
 
-Generate a clear, structured Pull Request or Merge Request description from **local git history** and save it to disk. No remote API authentication required — works with private repos. The output is ready to paste as a PR/MR description on GitHub, GitLab, Azure DevOps, or Bitbucket.
+Generate a Pull Request or Merge Request description from **local git history** and save it to disk. No remote API calls — works with private repos. The output is plain markdown, ready to paste on GitHub, GitLab, Azure DevOps or Bitbucket.
 
 ## What it does
 
-1. **Detects the platform** from the remote URL (GitHub, GitLab, Azure DevOps, Bitbucket) — for formatting only, no API calls made.
-2. **Parses the date range** from your request. Defaults to today if none is given.
-3. **Finds the base branch** automatically (`main`, `master`, or `develop`).
-4. **Collects commits** on the current branch not yet merged into the base, filtered by date range. Merge commits are excluded.
-5. **Reads the diff** and understands the change — not just echoing commit messages.
-6. **Asks for a title** (type, optional epic, optional task links) and generates a suggested
-   PR/MR title plus an optional `## Tasks` section.
-7. **Saves a markdown file** in the current directory, ready to paste as a PR/MR description.
+1. **Chooses the scope** from your request: the whole branch unless you name a period, and only **your** commits (matched by your git `user.email` or `user.name`) unless you ask for everyone's.
+2. **Runs `scripts/collect.sh`**, which finds the base branch on the remote, leaves out merge commits and other people's commits, tells you what was left out, and prints the file stats and the patch. Lockfile contents are skipped.
+3. **Reads the change** and works out what the code does differently now.
+4. **Asks for the title inputs** in one message: type, optional epic, optional tasks.
+5. **Saves a markdown file** in the current directory and checks its numbers against the script's output.
 
-## Output format
+## Output
 
 ```
-pr-<branch-name>-summary.md
+pr-<branch-name>-summary.md      # or pr-<number>-summary.md when you give a PR/MR number or URL
 ```
 
-Covers: suggested title, what changed, motivation & context, tasks (if provided), impact & risks, and a file-by-file breakdown with line counts.
+Sections: title (`feat(EPIC-10): ...`), what changed, motivation and context, tasks (only if given), impact and risks, and a file-by-file table with line counts.
+
+Written in English by default. Ask for another language ("em português") and the whole file, headings included, is written in it.
 
 ## Triggers
 
+- "generate a PR description for this branch"
+- "escreve a descrição do PR"
 - "summarize my commits since Monday"
-- "generate a PR description for today's work"
-- "create an MR description from commits since 2026-03-20"
+- "create an MR description for PR 42" or a PR/MR URL
 - "gerar resumo do PR" / "resumir PR" / "descrever o MR"
 
 ## Does NOT trigger for
 
-Code reviews, merge conflict help, commit messages, changelogs, or release notes.
+Code reviews, merge conflict help, commit messages, changelogs, release notes, or quick questions like "what does this PR change?" that only need an answer in chat.
+
+## Requirements
+
+`bash` and `git`. On Windows, use Git Bash or WSL.
+
+## Testing
+
+`evals/setup-fixture.sh` builds a test repo with commits by two authors, a merge from main and a lockfile change. `evals/evals.json` lists the prompts and the expected results.
+
+```bash
+bash evals/setup-fixture.sh /tmp/pr-summary-fixture
+cd /tmp/pr-summary-fixture/work
+```
